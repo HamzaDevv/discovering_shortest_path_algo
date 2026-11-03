@@ -1,0 +1,16 @@
+family,n,m,method,fallback,hybrid_scans,bf_scans,hybrid_median_ms,bf_median_ms
+nonnegative,100,600,dijkstra,0,600,3000,0.061625,0.018875
+signed_potential,100,600,bounded-heap,0,2760,3000,0.165583,0.015375
+signed_dag,100,341,dag,0,341,682,0.033167,0.004708
+negative_ring,100,100,bounded-heap,0,100,10000,0.012833,0.061250
+reverse_order_chain,100,99,dag,0,99,9900,0.012416,0.039083
+nonnegative,500,3000,dijkstra,0,3000,21000,0.345166,0.135875
+signed_potential,500,3000,bounded-heap,0,9450,21000,0.656709,0.115042
+signed_dag,500,1782,dag,0,1782,3564,0.130834,0.020208
+negative_ring,500,500,bounded-heap,0,500,250000,0.019625,0.607084
+reverse_order_chain,500,499,dag,0,499,249500,0.015416,0.240708
+nonnegative,1000,6000,dijkstra,0,6000,48000,0.244917,0.097375
+signed_potential,1000,6000,bounded-heap,0,21312,48000,0.704834,0.092542
+signed_dag,1000,3545,dag,0,3545,7090,0.123083,0.018417
+negative_ring,1000,1000,bounded-heap,0,1000,1000000,0.034584,2.339959
+reverse_order_chain,1000,999,dag,0,999,999000,0.030666,0.950625

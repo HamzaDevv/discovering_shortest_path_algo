@@ -1,0 +1,26 @@
+# Compiled binaries
+*.o
+*.out
+*.exe
+*.dSYM/
+
+# Build directory
+build/
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary files
+/tmp/
