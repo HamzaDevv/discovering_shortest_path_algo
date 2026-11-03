@@ -1,6 +1,9 @@
 # BranchCore: an exact structural shortest-path experiment
 
-Research date: 3 November 2026. Main implementation: `branch_core.hpp`.
+Research date: 3 November 2026. Main implementation:
+[`include/branch_core.hpp`](../include/branch_core.hpp).
+See also the [session record](SESSION_NOTES.md) for the progression from the
+original hypothesis, validation evidence, and open research questions.
 
 We built and tested a candidate algorithm, derived a structural running-time
 bound, and checked related research. This is not a verified first discovery or
@@ -204,13 +207,14 @@ broader evaluation against strong public implementations.
 ## Tests and reproducibility
 
 ```sh
-clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined signed_core_test.cpp -o /tmp/signed_core_test
-/tmp/signed_core_test
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror branch_core_demo.cpp -o /tmp/branch_core_demo
-printf '3 3 0\n0 1 1\n1 2 -5\n2 0 2\n' | /tmp/branch_core_demo
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror signed_core_benchmark.cpp -o /tmp/signed_core_benchmark
-/tmp/signed_core_benchmark > signed_core_results.csv
+make build/signed_core_test build/branch_core_demo build/signed_core_benchmark
+build/signed_core_test
+printf '3 3 0\n0 1 1\n1 2 -5\n2 0 2\n' | build/branch_core_demo
+build/signed_core_benchmark > /tmp/signed_core_results.csv
 ```
+
+Run these commands from the repository root. The Makefile enables sanitizers
+for tests; the `/tmp` output preserves the original measurements in `data/`.
 
 Input uses zero-based vertices: `n m source`, then m lines `from to weight`.
 
@@ -251,7 +255,7 @@ the positive-sum ring is already solved in two ordered passes by the reference.
 Preprocessing dominates our prototype there. The general structural bound is
 an advantage on an input class, not a prediction of every individual timing.
 
-`signed_core_results.csv` contains all measured families, solvers and sizes,
+[`data/signed_core_results.csv`](../data/signed_core_results.csv) contains all measured families, solvers and sizes,
 including losses. These synthetic tests are diagnostic, not evidence of
 universal dominance. The earlier portfolio is faster on many of them;
 Bellman-Ford wins several small random instances. BranchCore's defensible

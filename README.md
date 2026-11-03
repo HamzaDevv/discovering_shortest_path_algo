@@ -11,7 +11,7 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 - **Exact 128-bit integer arithmetic** — no floating-point tolerance, overflow throws
 - **Negative-cycle certification** — returns an original-edge witness with a checked negative sum
 - **Three solver tiers** — portfolio hybrid, SCC-aware signed-core, and structural branch-core
-- **36,000+ seeded test graphs** verified against a Floyd-Warshall oracle under AddressSanitizer / UBSan
+- **32,000 seeded random graphs**, 4,096 exhaustive graphs, and 500 subdivided cores checked against a Floyd-Warshall oracle under AddressSanitizer / UBSan
 
 ---
 
@@ -52,6 +52,7 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 ├── docs/                           # Research documentation & figures
 │   ├── ALGORITHM.md                # Findings, counterexample, correctness proof, prior-art review
 │   ├── SIGNED_CORE.md              # BranchCore proof, structural bound, novelty audit
+│   ├── SESSION_NOTES.md            # Research session record, outcomes, and open questions
 │   ├── Figure_1.png
 │   └── heap_VS_queue.png
 │
@@ -74,9 +75,9 @@ A deterministic combination of established methods:
 | Graph Class | Method | Time Bound | Space |
 |---|---|---|---|
 | DAG | Topological-order relaxation | O(n + m) | O(n + m) |
-| Nonnegative cyclic | Binary-heap Dijkstra | O(n + m log m) | O(n + m) |
-| Mixed-weight cyclic | Bounded heap + periodic cycle checks | O((n + m) log(n + m)) | O(n + m) |
-| Fallback | Bellman-Ford | O(nm) | O(n + m) |
+| Nonnegative cyclic | Binary-heap Dijkstra | O(n + m log(m + 1)) | O(n + m) |
+| Mixed-weight heap phase only | Bounded heap + periodic cycle checks | O((n + m) log(n + m)) | O(n + m) |
+| Full mixed-weight solve, including fallback | Bounded heap followed by Bellman-Ford if needed | O(nm + (n + m) log(n + m)) | O(n + m) |
 
 ### 2. Signed-Core Solver (`signed_core.hpp`)
 
@@ -91,8 +92,12 @@ SCC decomposition with per-component optimization:
 Structural compression eliminating forced continuations:
 - Contracts vertices with exactly one internal outgoing edge
 - Runs Bellman-Ford on the **compressed branching core** only
-- **Structural bound**: O(n + m + Σ b_C · t_C) per component, where b_C = branching vertices, t_C = their total outgoing edges
+- **Total structural bound**: O(n + m + Σ k_C · t_C), where k_C and t_C count retained core vertices and edges in reachable SCC C (a ring retains one anchor and one edge)
 - Linear time when internal excess per SCC is constant
+
+BranchCore is an experimental composition with a documented correctness
+argument. Its scientific novelty is unverified; its general worst-case bound
+remains O(n + m + nm), and it does not win every benchmark.
 
 ---
 
@@ -173,6 +178,7 @@ Vertex 3 improves **4 times** through different paths, but there is **no cycle**
 
 ## Documentation
 
+- [**SESSION_NOTES.md**](docs/SESSION_NOTES.md) — Session record connecting the original hypothesis, implemented candidates, results, and open research questions
 - [**ALGORITHM.md**](docs/ALGORITHM.md) — Detailed findings, counterexample proof, correctness argument, complexity analysis, and prior-art survey
 - [**SIGNED_CORE.md**](docs/SIGNED_CORE.md) — BranchCore structural bound derivation, correctness proof, novelty audit against 8 research papers, and benchmark analysis
 

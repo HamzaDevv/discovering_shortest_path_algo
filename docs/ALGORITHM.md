@@ -3,10 +3,11 @@
 The follow-up [BranchCore research experiment](SIGNED_CORE.md) adds structural
 compression, proofs, an expanded prior-art review, and new verified benchmarks.
 
-Reviewed 3 November 2026. The original `Main.cpp`, `local.cpp`,
-`ap_spfa.cpp`, and `benchmark.cpp` are historical experiments. Their raw
+Reviewed 3 November 2026. The original files in `legacy/` (`Main.cpp`, `local.cpp`,
+`ap_spfa.cpp`, and `benchmark.cpp`) are historical experiments. Their raw
 relaxation counters do **not** correctly certify negative cycles. Use
-`shortest_paths.hpp` and the new demo/tests/benchmark for the verified work.
+[`include/shortest_paths.hpp`](../include/shortest_paths.hpp) and the demos,
+tests, and benchmarks in the refactored directories for the verified work.
 
 ## What the loop hypothesis gets right
 
@@ -139,7 +140,7 @@ five-run medians plus edge scans. Potential-generated weights
 telescope around every cycle. Timings include solver preprocessing but exclude
 graph generation and validation of returned answers.
 
-The local results in `verified_benchmark_results.csv` show substantial scan
+The local results in [`data/verified_benchmark_results.csv`](../data/verified_benchmark_results.csv) show substantial scan
 reductions for negative rings and reverse-ordered chains. Bellman-Ford is faster
 in wall time on several small random families despite scanning more edges.
 This hybrid does not win on every input. These small benchmarks are diagnostic,
@@ -182,13 +183,14 @@ adversarial tests, and comparison with these results before a novelty claim.
 ## Build and reproduce
 
 ```sh
-clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined shortest_paths_test.cpp -o /tmp/shortest_paths_test
-/tmp/shortest_paths_test
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror shortest_paths_demo.cpp -o /tmp/shortest_paths_demo
-printf '3 3 0\n0 1 1\n1 2 -5\n2 0 2\n' | /tmp/shortest_paths_demo
-clang++ -std=c++17 -O2 -Wall -Wextra -Werror shortest_paths_benchmark.cpp -o /tmp/shortest_paths_benchmark
-/tmp/shortest_paths_benchmark > verified_benchmark_results.csv
+make build/shortest_paths_test build/shortest_paths_demo build/shortest_paths_benchmark
+build/shortest_paths_test
+printf '3 3 0\n0 1 1\n1 2 -5\n2 0 2\n' | build/shortest_paths_demo
+build/shortest_paths_benchmark > /tmp/verified_benchmark_results.csv
 ```
+
+Run these commands from the repository root. The Makefile enables sanitizers
+for tests; the `/tmp` output preserves the original measurements in `data/`.
 
 Tests compare three solver configurations with an independent Floyd-Warshall
 oracle on 12,000 seeded small random graphs. Regressions cover the false counter
