@@ -18,14 +18,29 @@ struct Statistics {
 };
 struct Output { Result answer; Statistics statistics; };
 
+// Used by the restart portfolio to abandon an unfinished prefix. Exhausting
+// this budget says nothing about the presence of a negative cycle.
+struct ScanBudgetExceeded : std::runtime_error {
+    std::size_t edge_scans, cycle_checks;
+    ScanBudgetExceeded(std::size_t scans, std::size_t checks)
+        : std::runtime_error("branch-core scan budget exhausted"),
+          edge_scans(scans), cycle_checks(checks) {}
+};
+
 namespace detail {
 struct CoreEdge { int from, to; Distance weight; std::size_t first; };
+
+inline void scan(Output& output, std::optional<std::size_t> budget) {
+    if (budget && output.answer.edge_scans >= *budget)
+        throw ScanBudgetExceeded(output.answer.edge_scans, output.answer.cycle_checks);
+    ++output.answer.edge_scans;
+}
 
 // Exact multi-source SCC solver. Vertices with one internal outgoing edge have
 // forced continuations; retain all other vertices, or one anchor on a ring.
 inline std::vector<std::size_t> local(
         int n, const std::vector<Edge>& edges, std::vector<Cell>& distance,
-        Output& output) {
+        Output& output, std::optional<std::size_t> budget) {
     if (edges.empty()) {
         if (n != 1) throw std::logic_error("edgeless nontrivial SCC");
         return {};
@@ -90,7 +105,7 @@ inline std::vector<std::size_t> local(
     for (int pass = 0; pass < b; ++pass) {
         changed = -1;
         for (std::size_t i = 0; i < core_edges.size(); ++i) {
-            ++output.answer.edge_scans;
+            scan(output, budget);
             const auto& e = core_edges[i];
             if (!core_distance[e.from]) continue;
             auto candidate = add(*core_distance[e.from], e.weight);
@@ -140,7 +155,7 @@ inline std::vector<std::size_t> local(
     // also recovers vertices reached before the first branch on a source path.
     for (int u : branches) distance[u] = core_distance[core_id[u]];
     auto relax = [&](std::size_t i) {
-        ++output.answer.edge_scans;
+        scan(output, budget);
         const auto& e = edges[i];
         if (!distance[e.from]) return;
         auto candidate = add(*distance[e.from], e.weight);
@@ -154,7 +169,8 @@ inline std::vector<std::size_t> local(
 
 // Integer weights, exact checked 128-bit internal arithmetic. Returns finite /
 // unreachable distances OR an original-edge reachable negative-cycle witness.
-inline Output solve(int n, const std::vector<Edge>& edges, int source) {
+inline Output solve(int n, const std::vector<Edge>& edges, int source,
+                    std::optional<std::size_t> scan_budget = std::nullopt) {
     shortest_paths::detail::validate(n, edges, source);
     Output output;
     output.answer.method = "branch-core";
@@ -189,7 +205,8 @@ inline Output solve(int n, const std::vector<Edge>& edges, int source) {
             const auto& e = edges[i];
             local_edges.push_back({local_id[e.from], local_id[e.to], e.weight});
         }
-        auto cycle = detail::local(static_cast<int>(entry.size()), local_edges, entry, output);
+        auto cycle = detail::local(static_cast<int>(entry.size()), local_edges, entry,
+                                   output, scan_budget);
         if (!cycle.empty()) {
             for (auto i : cycle) output.answer.negative_cycle.push_back(internal[c][i]);
             output.answer.distances.clear();
@@ -198,7 +215,7 @@ inline Output solve(int n, const std::vector<Edge>& edges, int source) {
         for (std::size_t j = 0; j < entry.size(); ++j)
             output.answer.distances[vertices[c][j]] = entry[j];
         for (auto i : outgoing[c]) {
-            ++output.answer.edge_scans;
+            detail::scan(output, scan_budget);
             const auto& e = edges[i];
             if (id[e.to] <= c) throw std::logic_error("SCC ordering failure");
             if (!output.answer.distances[e.from]) continue;

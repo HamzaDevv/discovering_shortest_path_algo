@@ -12,7 +12,7 @@ demos: $(BUILDDIR)/shortest_paths_demo $(BUILDDIR)/signed_core_demo $(BUILDDIR)/
 
 tests: $(BUILDDIR)/shortest_paths_test $(BUILDDIR)/signed_core_test
 
-benchmarks: $(BUILDDIR)/shortest_paths_benchmark $(BUILDDIR)/signed_core_benchmark
+benchmarks: $(BUILDDIR)/shortest_paths_benchmark $(BUILDDIR)/signed_core_benchmark $(BUILDDIR)/competitive_paths_benchmark
 
 $(BUILDDIR):
 	@mkdir -p $(BUILDDIR)
@@ -31,14 +31,17 @@ $(BUILDDIR)/branch_core_demo: src/branch_core_demo.cpp include/branch_core.hpp i
 $(BUILDDIR)/shortest_paths_test: tests/shortest_paths_test.cpp include/shortest_paths.hpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -O1 -g -fsanitize=address,undefined $(INCLUDES) $< -o $@
 
-$(BUILDDIR)/signed_core_test: tests/signed_core_test.cpp include/branch_core.hpp include/signed_core.hpp include/shortest_paths.hpp | $(BUILDDIR)
+$(BUILDDIR)/signed_core_test: tests/signed_core_test.cpp include/competitive_paths.hpp include/adaptive_core.hpp include/branch_core.hpp include/signed_core.hpp include/shortest_paths.hpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -O1 -g -fsanitize=address,undefined $(INCLUDES) $< -o $@
 
 # ─── Benchmarks ─────────────────────────────────────────────────
 $(BUILDDIR)/shortest_paths_benchmark: benchmarks/shortest_paths_benchmark.cpp include/shortest_paths.hpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -O2 $(INCLUDES) $< -o $@
 
-$(BUILDDIR)/signed_core_benchmark: benchmarks/signed_core_benchmark.cpp include/branch_core.hpp include/signed_core.hpp include/shortest_paths.hpp | $(BUILDDIR)
+$(BUILDDIR)/signed_core_benchmark: benchmarks/signed_core_benchmark.cpp include/adaptive_core.hpp include/branch_core.hpp include/signed_core.hpp include/shortest_paths.hpp | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -O2 $(INCLUDES) $< -o $@
+
+$(BUILDDIR)/competitive_paths_benchmark: benchmarks/competitive_paths_benchmark.cpp include/competitive_paths.hpp include/adaptive_core.hpp include/branch_core.hpp include/signed_core.hpp include/shortest_paths.hpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -O2 $(INCLUDES) $< -o $@
 
 # ─── Run targets ────────────────────────────────────────────────
@@ -57,6 +60,9 @@ run-benchmarks: benchmarks
 	@echo ""
 	@echo "=== Signed Core Benchmark ==="
 	$(BUILDDIR)/signed_core_benchmark
+	@echo ""
+	@echo "=== Competitive Portfolio Benchmark ==="
+	$(BUILDDIR)/competitive_paths_benchmark
 
 # ─── Clean ──────────────────────────────────────────────────────
 clean:

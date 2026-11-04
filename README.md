@@ -10,7 +10,7 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 
 - **Exact 128-bit integer arithmetic** — no floating-point tolerance, overflow throws
 - **Negative-cycle certification** — returns an original-edge witness with a checked negative sum
-- **Three solver tiers** — portfolio hybrid, SCC-aware signed-core, and structural branch-core
+- **Five solver variants** — portfolio hybrid, SCC-aware signed-core, structural branch-core, adaptive core, and a competitive portfolio experiment
 - **32,000 seeded random graphs**, 4,096 exhaustive graphs, and 500 subdivided cores checked against a Floyd-Warshall oracle under AddressSanitizer / UBSan
 
 ---
@@ -22,7 +22,9 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 ├── include/                        # Header-only algorithm libraries
 │   ├── shortest_paths.hpp          # Portfolio solver: DAG / Dijkstra / bounded-heap / Bellman-Ford
 │   ├── signed_core.hpp             # SCC decomposition + local potentials & negative-edge phases
-│   └── branch_core.hpp             # Structural compression: forced-path contraction on SCCs
+│   ├── branch_core.hpp             # Structural compression: forced-path contraction on SCCs
+│   ├── adaptive_core.hpp           # Two-pass probe with BranchCore fallback
+│   └── competitive_paths.hpp       # DAG specialization + four bounded engines with doubling budgets
 │
 ├── src/                            # Interactive demo programs (stdin → stdout)
 │   ├── shortest_paths_demo.cpp
@@ -35,7 +37,8 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 │
 ├── benchmarks/                     # Reproducible, answer-checked benchmarks
 │   ├── shortest_paths_benchmark.cpp
-│   └── signed_core_benchmark.cpp
+│   ├── signed_core_benchmark.cpp
+│   └── competitive_paths_benchmark.cpp # Broader comparison with fresh-seed holdout
 │
 ├── legacy/                         # Historical experiments (see docs/ALGORITHM.md for caveats)
 │   ├── Main.cpp                    # Original heap + visit-counter approach
@@ -46,6 +49,10 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 ├── data/                           # Benchmark results & plot data
 │   ├── verified_benchmark_results.csv
 │   ├── signed_core_results.csv
+│   ├── adaptive_trial_results.csv  # Seven-method adaptive comparison
+│   ├── competitive_trial_results.csv
+│   ├── competitive_holdout_results.csv
+│   ├── competitive_trial_initial_results.csv # Development run before dispatch improvements
 │   ├── benchmark_results.txt
 │   └── plot1–4.txt
 │
@@ -53,11 +60,14 @@ A collection of shortest-path algorithms for directed graphs with **signed integ
 │   ├── ALGORITHM.md                # Findings, counterexample, correctness proof, prior-art review
 │   ├── SIGNED_CORE.md              # BranchCore proof, structural bound, novelty audit
 │   ├── SESSION_NOTES.md            # Research session record, outcomes, and open questions
+│   ├── ADAPTIVE_TRIAL.md
+│   ├── COMPETITIVE_TRIAL.md        # Finite-portfolio guarantee, research update, and honest results
 │   ├── Figure_1.png
 │   └── heap_VS_queue.png
 │
 ├── scripts/
-│   └── plotting.py                 # Matplotlib visualization for legacy benchmark data
+│   ├── plotting.py                 # Matplotlib visualization for legacy benchmark data
+│   └── summarize_competitive.py    # Equal-family geometric scores and worst slowdowns
 │
 ├── Makefile                        # Build everything with one command
 ├── CONTRIBUTING.md
@@ -99,6 +109,24 @@ BranchCore is an experimental composition with a documented correctness
 argument. Its scientific novelty is unverified; its general worst-case bound
 remains O(n + m + nm), and it does not win every benchmark.
 
+### 4. Adaptive Core (`adaptive_core.hpp`)
+
+An experimental two-pass Bellman-Ford probe returns early when no label changes;
+otherwise it runs BranchCore. See [the trial report](docs/ADAPTIVE_TRIAL.md)
+for its guarantees and measured wins and losses.
+
+### 5. Competitive Portfolio (`competitive_paths.hpp`)
+
+Returns immediately on DAGs; otherwise races bounded Bellman-Ford, FIFO,
+indexed-heap, and BranchCore attempts under budgets that double. It returns
+exact distances or a verified negative-cycle witness. Its bound is
+`O(n + m + min_i q_i)`, where `q_i` is each **included engine's metered work**;
+space is `O(n + m)`. This is a guarantee relative to four specific engines.
+
+The [trial report](docs/COMPETITIVE_TRIAL.md) gives the proof, computational
+model, current research, and development/holdout measurements. The experiment
+does not establish a universally best algorithm or a new asymptotic record.
+
 ---
 
 ## Getting Started
@@ -133,7 +161,7 @@ Expected output:
 PASS: regressions and 12000 seeded random graphs; three solver configurations checked against Floyd-Warshall
 
 === Signed Core + Branch Core Tests ===
-PASS: regressions, 4096 exhaustive graphs (all sources), 20000 seeded random graphs; seven configurations vs Floyd-Warshall; 500 random subdivided cores
+PASS: regressions, 4096 exhaustive graphs (all sources), 20000 seeded random graphs; nine configurations vs Floyd-Warshall; 500 random subdivided cores; 2000 bounded-engine and metamorphic trials
 ```
 
 ### Run Demos
@@ -156,6 +184,9 @@ make run-benchmarks
 # Save results to CSV
 build/shortest_paths_benchmark > data/verified_benchmark_results.csv
 build/signed_core_benchmark > data/signed_core_results.csv
+build/competitive_paths_benchmark > data/competitive_trial_results.csv
+build/competitive_paths_benchmark --holdout > data/competitive_holdout_results.csv
+python3 scripts/summarize_competitive.py data/competitive_holdout_results.csv
 ```
 
 ---
@@ -179,6 +210,8 @@ Vertex 3 improves **4 times** through different paths, but there is **no cycle**
 ## Documentation
 
 - [**SESSION_NOTES.md**](docs/SESSION_NOTES.md) — Session record connecting the original hypothesis, implemented candidates, results, and open research questions
+- [**ADAPTIVE_TRIAL.md**](docs/ADAPTIVE_TRIAL.md) — Two-pass adaptive experiment and measured results
+- [**COMPETITIVE_TRIAL.md**](docs/COMPETITIVE_TRIAL.md) — Four-engine restart portfolio, precise guarantee, research update, and broader evaluation
 - [**ALGORITHM.md**](docs/ALGORITHM.md) — Detailed findings, counterexample proof, correctness argument, complexity analysis, and prior-art survey
 - [**SIGNED_CORE.md**](docs/SIGNED_CORE.md) — BranchCore structural bound derivation, correctness proof, novelty audit against 8 research papers, and benchmark analysis
 

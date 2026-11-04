@@ -1,4 +1,4 @@
-#include "branch_core.hpp"
+#include "adaptive_core.hpp"
 #include <array>
 #include <chrono>
 #include <iomanip>
@@ -9,10 +9,10 @@ using namespace shortest_paths;
 using Clock = std::chrono::steady_clock;
 
 void run(const std::string& family, int n, const std::vector<Edge>& edges) {
-    constexpr int methods = 6, repetitions = 7;
+    constexpr int methods = 7, repetitions = 7;
     const std::array<std::string, methods> names = {
         "signed_core", "without_tree", "global_phases", "previous_portfolio", "bellman_ford",
-        "branch_core"
+        "branch_core", "adaptive_core"
     };
     std::array<std::vector<double>, methods> times;
     std::array<signed_core::Output, methods> outputs;
@@ -44,6 +44,7 @@ void run(const std::string& family, int n, const std::vector<Edge>& edges) {
                 output.answer = std::move(compressed.answer);
                 branch_statistics[method] = compressed.statistics;
             }
+            if (method == 6) output.answer = adaptive_core::solve(n, edges, 0);
             double ms = std::chrono::duration<double, std::milli>(Clock::now()-start).count();
             auto& r = output.answer;
             if (r.distances != reference.distances ||
